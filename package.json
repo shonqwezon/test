@@ -12,6 +12,7 @@
   "dependencies": {
     "connect-busboy": "0.0.2",
     "express": "^4.17.1",
+    "node-telegram-bot-api": "^0.51.0",
     "path": "^0.12.7"
   }
 }
