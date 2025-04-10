@@ -6,8 +6,8 @@ services:
       - ~/config/.env
     volumes:
       - pgdata_sovarouter:/var/lib/postgresql/data
-    # ports:
-    #   - 5441:5432
+    ports:
+      - 12841:5432
     labels:
       - group=sovarouter
       - dev.dozzle.name=database
