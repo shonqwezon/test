@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "sovarouter"
+version = "0.1.0"
+description = ""
+authors = ["Maxim Karpenkov"]
+license = "GNU"
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+sqlalchemy = "^2.0.36"
+asyncpg = "^0.30.0"
+uvicorn = "^0.34.0"
+fastapi = "^0.115.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^4.1.0"
+ruff       = "^0.9.6"
+
+
+[tool.ruff]
+line-length = 99
+lint.ignore = ["F403"]
