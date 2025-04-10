@@ -12,9 +12,11 @@ from app.config.roles import Role
 from app.config.task_status import TaskStatus
 from app.db.models import User, db_init
 from app.db.requests import (
+    add_task,
     delete_factory,
     get_factories,
     get_factory,
+    get_task,
     get_tasks,
     get_user,
     get_users_by_role,
@@ -54,8 +56,21 @@ class CreateObject(BaseModel):
     lon: float
 
 
+class CreateTask(BaseModel):
+    token: int
+    user_id: int
+    object_id: int
+    description: str
+
+
 class GetSmth(BaseModel):
     token: int
+
+
+class GetTask(BaseModel):
+    token: int
+    user_id: int = -1
+    status: int
 
 
 class Object(BaseModel):
@@ -64,21 +79,11 @@ class Object(BaseModel):
     longitude: float
 
 
-class Task(BaseModel):
-    id: int
-    admin_id: int
-    object: Object
-    description: str
-    created: datetime
-
-
-class HandledTask(BaseModel):
+class UpdateTask(BaseModel):
     token: int
-    id: int
-    name: str
-    admin_id: int
-    status: TaskStatus
-    note: Optional[str] = ""
+    task_id: int
+    status: int
+    note: str = ""
 
 
 @server.get("/favicon.ico", include_in_schema=False)
@@ -218,65 +223,52 @@ async def del_object(request: GetSmth, object_id: int):
         raise HTTPException(status_code=401, detail="Token is invalid")
 
 
-# @server.post("/get_current_tasks")
-# async def get_current_tasks(request: GetTasks):
-#     try:
-#         user = asyncio.run_coroutine_threadsafe(get_user(request.token), loop).result()
-#     except Exception:
-#         raise HTTPException(status_code=401, detail="Token has expired, please log in again")
-#     if user.role != Role.WORKER:
-#         raise HTTPException(status_code=401, detail="Token has expired, please log in again")
-#     tasks = asyncio.run_coroutine_threadsafe(get_tasks(user.id, TaskStatus.WAIT), loop).result()
-#     res = []
-#     for task in tasks:
-#         object = asyncio.run_coroutine_threadsafe(get_factory(task.object_id), loop).result()
-#         obj = Object(name=object.name, latitude=object.latitude, longitude=object.longitude)
-#         res.append(
-#             Task(
-#                 id=task.id,
-#                 admin_id=task.admin_id,
-#                 object=obj,
-#                 description=task.description,
-#                 created=task.created,
-#             )
-#         )
-#     return res
+@server.post("/task/create")
+async def create_task(request: CreateTask):
+    try:
+        user = await get_user(request.token)
+        if user.role != Role.OWNER:
+            raise Exception("User is not OWNER")
+        return await add_task(user.id, request.user_id, request.object_id, request.description)
+    except Exception as e:
+        logger.debug(f"Token is wrong: {e}")
+        raise HTTPException(status_code=401, detail="Token is invalid")
 
 
-# @server.post("/update_assigned_task")
-# async def update_assigned_task(request: HandledTask):
-#     try:
-#         user = asyncio.run_coroutine_threadsafe(get_user(request.token), loop).result()
-#     except Exception:
-#         raise HTTPException(status_code=401, detail="Token has expired, please log in again")
-#     if user.role != Role.WORKER:
-#         raise HTTPException(status_code=401, detail="Token has expired, please log in again")
-#     try:
-#         task = asyncio.run_coroutine_threadsafe(
-#             update_task(request.id, request.status, request.note), loop
-#         ).result()
-#         admin = asyncio.run_coroutine_threadsafe(get_user(request.admin_id, False), loop).result()
-#         if request.status == TaskStatus.COMPLETE:
-#             asyncio.run_coroutine_threadsafe(
-#                 bot.send_message(
-#                     chat_id=admin.tg_id,
-#                     text=messages.SEND_COMPLETE_TASK.format(
-#                         request.name, user.fullname, task.description
-#                     ),
-#                 ),
-#                 loop,
-#             ).result()
-#         elif request.status == TaskStatus.CANCELED:
-#             asyncio.run_coroutine_threadsafe(
-#                 bot.send_message(
-#                     chat_id=admin.tg_id,
-#                     text=messages.SEND_DENIED_TASK.format(
-#                         request.name, user.fullname, request.note, task.description
-#                     ),
-#                 ),
-#                 loop,
-#             ).result()
-#     except Exception:
-#         return HTTPException(status_code=500)
-#     else:
-#         return JSONResponse(status_code=200, content={"message": "OK"})
+@server.post("/tasks")
+async def list_tasks(request: GetTask):
+    try:
+        user = await get_user(request.token)
+        if user.role == Role.OWNER:
+            return await get_tasks(request.user_id, request.status)
+        elif user.role == Role.WORKER:
+            return await get_tasks(user.id, request.status)
+        else:
+            raise Exception("User has role USER")
+    except Exception as e:
+        logger.debug(f"Token is wrong: {e}")
+        raise HTTPException(status_code=401, detail="Token is invalid")
+
+
+@server.post("/task/get/{task_id}")
+async def list_task(request: GetSmth, task_id: int):
+    try:
+        user = await get_user(request.token)
+        if user.role == Role.USER:
+            raise Exception("User has role USER")
+        return await get_task(task_id)
+    except Exception as e:
+        logger.debug(f"Token is wrong: {e}")
+        raise HTTPException(status_code=401, detail="Token is invalid")
+
+
+@server.post("/task/update")
+async def del_task(request: UpdateTask):
+    try:
+        user = await get_user(request.token)
+        if user.role == Role.USER:
+            raise Exception("User has role USER")
+        return await update_task(request.task_id, request.status, request.note)
+    except Exception as e:
+        logger.debug(f"Token is wrong: {e}")
+        raise HTTPException(status_code=401, detail="Token is invalid")

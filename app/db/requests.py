@@ -184,7 +184,8 @@ async def update_task(task_id: int, status: TaskStatus, note: str = "") -> Worke
             raise BadKeyError()
         task.status = status
         task.note = note
-        task.completed = datetime.now()
+        if status == TaskStatus.COMPLETE or status == TaskStatus.CANCELED:
+            task.completed = datetime.now()
         await session.commit()
         return task
 
