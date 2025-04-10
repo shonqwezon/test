@@ -100,7 +100,7 @@ async def update_user(id: int, values: dict, use_tg: bool = True) -> None:
             raise BadFormatError(ex)
 
 
-async def set_factory(name: str, description: str, location: tuple) -> Object:
+async def set_factory(name: str, description: str, lat: float, lon: float) -> Object:
     """Устанавливет или обновляет завод.
 
     Args:
@@ -111,14 +111,14 @@ async def set_factory(name: str, description: str, location: tuple) -> Object:
         Object: Сущность завода.
     """
     logger.debug(
-        f"Установка factory (name={name}, description={description}, location={location})"
+        f"Установка factory (name={name}, description={description}, location=({lat}, {lon}))"
     )
     async with async_session() as session:
         factory = Object(
             name=name,
             description=description,
-            latitude=float(location[0]),
-            longitude=float(location[1]),
+            latitude=lat,
+            longitude=lon,
         )
         session.add(factory)
         try:

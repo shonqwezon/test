@@ -12,10 +12,13 @@ from app.config.roles import Role
 from app.config.task_status import TaskStatus
 from app.db.models import User, db_init
 from app.db.requests import (
+    delete_factory,
+    get_factories,
     get_factory,
     get_tasks,
     get_user,
     get_users_by_role,
+    set_factory,
     set_user,
     update_task,
     update_user,
@@ -41,6 +44,14 @@ class AuthRequest(BaseModel):
 class CreateWorker(BaseModel):
     fullname: str
     token: int
+
+
+class CreateObject(BaseModel):
+    token: int
+    name: str
+    description: str
+    lat: float
+    lon: float
 
 
 class GetSmth(BaseModel):
@@ -118,8 +129,7 @@ async def create_user(request: CreateWorker):
 
 
 @server.post("/users")
-async def list_users(request: GetSmth, user_id: int = -1):
-    print(user_id)
+async def list_users(request: GetSmth):
     try:
         user = await get_user(request.token)
         if user.role != Role.OWNER:
@@ -153,6 +163,55 @@ async def del_user(request: GetSmth, user_id: int):
             {User.role: Role.USER},
             False,
         )
+        return JSONResponse(content={"message": "OK"}, status_code=200)
+    except Exception as e:
+        logger.debug(f"Token is wrong: {e}")
+        raise HTTPException(status_code=401, detail="Token is invalid")
+
+
+@server.post("/object/create")
+async def create_object(request: CreateObject):
+    try:
+        user = await get_user(request.token)
+        if user.role != Role.OWNER:
+            raise Exception("User is not OWNER")
+        return await set_factory(request.name, request.description, request.lat, request.lon)
+    except Exception as e:
+        logger.debug(f"Token is wrong: {e}")
+        raise HTTPException(status_code=401, detail="Token is invalid")
+
+
+@server.post("/objects")
+async def list_objects(request: GetSmth):
+    try:
+        user = await get_user(request.token)
+        if user.role != Role.OWNER:
+            raise Exception("User is not OWNER")
+        return await get_factories()
+    except Exception as e:
+        logger.debug(f"Token is wrong: {e}")
+        raise HTTPException(status_code=401, detail="Token is invalid")
+
+
+@server.post("/object/get/{object_id}")
+async def list_object(request: GetSmth, object_id: int):
+    try:
+        user = await get_user(request.token)
+        if user.role != Role.OWNER:
+            raise Exception("User is not OWNER")
+        return await get_factory(object_id)
+    except Exception as e:
+        logger.debug(f"Token is wrong: {e}")
+        raise HTTPException(status_code=401, detail="Token is invalid")
+
+
+@server.post("/object/del/{object_id}")
+async def del_object(request: GetSmth, object_id: int):
+    try:
+        user = await get_user(request.token)
+        if user.role != Role.OWNER:
+            raise Exception("User is not OWNER")
+        await delete_factory(object_id)
         return JSONResponse(content={"message": "OK"}, status_code=200)
     except Exception as e:
         logger.debug(f"Token is wrong: {e}")
