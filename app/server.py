@@ -101,7 +101,7 @@ async def authenticate(request: AuthRequest):
         token = secrets.randbits(63)
         await set_user(token)
         await update_user(token, {User.role: Role.OWNER})
-        return {"token": token}
+        return await get_user(token)
 
     if name := ThreadSafeKey.is_valid(request.key):
         user = await set_user()
