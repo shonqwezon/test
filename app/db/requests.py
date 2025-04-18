@@ -204,12 +204,22 @@ async def get_tasks(user_id: int, status: TaskStatus) -> Sequence[WorkerTask]:
     logger.debug("get_tasks from db")
     async with async_session() as session:
         if user_id == -1:
-            tasks = await session.scalars(select(WorkerTask).where(WorkerTask.status == status))
-        else:
-            tasks = await session.scalars(
-                select(WorkerTask).where(
-                    WorkerTask.user_id == user_id, WorkerTask.status == status
+            if status != TaskStatus.ALL:
+                tasks = await session.scalars(
+                    select(WorkerTask).where(WorkerTask.status == status)
                 )
-            )
+            else:
+                tasks = await session.scalars(select(WorkerTask))
+        else:
+            if status != TaskStatus.ALL:
+                tasks = await session.scalars(
+                    select(WorkerTask).where(
+                        WorkerTask.user_id == user_id, WorkerTask.status == status
+                    )
+                )
+            else:
+                tasks = await session.scalars(
+                    select(WorkerTask).where(WorkerTask.user_id == user_id)
+                )
 
         return tasks.all()

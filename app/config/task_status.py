@@ -8,6 +8,7 @@ class TaskStatus(IntEnum):
     COMPLETE = 1
     CANCELED = 2
     PROGRESS = 3
+    ALL = -1
 
     @property
     def name(self):
