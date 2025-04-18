@@ -190,8 +190,8 @@ async def create_object(request: CreateObject):
 async def list_objects(request: GetSmth):
     try:
         user = await get_user(request.token)
-        if user.role != Role.OWNER:
-            raise Exception("User is not OWNER")
+        if user.role == Role.OWNER:
+            raise Exception("User has role USER")
         return await get_factories()
     except Exception as e:
         logger.debug(f"Token is wrong: {e}")
@@ -202,8 +202,8 @@ async def list_objects(request: GetSmth):
 async def list_object(request: GetSmth, object_id: int):
     try:
         user = await get_user(request.token)
-        if user.role != Role.OWNER:
-            raise Exception("User is not OWNER")
+        if user.role == Role.USER:
+            raise Exception("User has role USER")
         return await get_factory(object_id)
     except Exception as e:
         logger.debug(f"Token is wrong: {e}")
