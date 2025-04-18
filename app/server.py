@@ -190,7 +190,7 @@ async def create_object(request: CreateObject):
 async def list_objects(request: GetSmth):
     try:
         user = await get_user(request.token)
-        if user.role == Role.OWNER:
+        if user.role == Role.USER:
             raise Exception("User has role USER")
         return await get_factories()
     except Exception as e:
